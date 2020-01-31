@@ -23,7 +23,7 @@ Node.js / Express - Aplicação API REST, usada pra criar projetos e definir sua
 
 ## Começando
 
-##### Instalar as dependências:
+#### Instalar as dependências:
 
 ```
 npm install
@@ -33,9 +33,7 @@ ou
 yarn
 ```
 
-
-
-##### Executar a aplicação:
+#### Executar a aplicação:
 
 ```
 node index.js
