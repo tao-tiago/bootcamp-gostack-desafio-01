@@ -18,7 +18,7 @@ Node.js / Express - Aplicação API REST, usada pra criar projetos e definir sua
 <li>Nodemon para desenvolvimento</li>
 </ul>
 
-<p>Foram abordados conceitos de rest e spread, middleware, desestruturação, templates literais.</p>
+<p>Foram abordados conceitos de middleware, desestruturação, templates literais e mais...</p>
 
 
 ## Começando
