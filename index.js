@@ -1,109 +1,126 @@
 const express = require('express');
 
-const server = express();
+const app = express();
 
-server.use(express.json());
+// Informa ao Express que o formato experado para manipulação de dados é o JSON
+app.use(express.json());
 
-/**
- * A variável `projects` pode ser `const` porque um `array`
- * pode receber adições ou exclusões mesmo sendo uma constante.
- */
-const projects = [];
+// Inicia a constante onde serão armazenados os nossos projetos
+const projects = [
+    {
+        "id": 1,
+        "title": "Projeto 1",
+        "tasks": ["task01", "task02", "task03"]
+    }
 
-/**
- * Middleware que checa se o projeto existe
- */
-function checkProjectExists(req, res, next) {
-  const { id } = req.params;
-  const project = projects.find(p => p.id == id);
+];
 
-  if (!project) {
-    return res.status(400).json({ error: 'Project not found' });
-  }
+// Middleware Global para criar logs de requisição
+const logs = (req, res, next) =>{
 
-  return next();
+    console.count();
+    return next();
+
 }
 
-/**
- * Middleware que dá log no número de requisições
- */
-function logRequests(req, res, next) {
+// Middleware para verificar se existe um projeto
+const get_project = (req, res, next) => {
 
-  console.count("Número de requisições");
+    // Guarda o ID do projeto
+    let { id } = req.params;
 
-  return next();
+    // Busca o índice do projeto no array
+    let project_id = projects.findIndex(data => data.id == id);
+
+    // Se o projeto não existir, retorna um erro.
+    if(project_id == -1){
+        return res.status(400).json({error: "Projeto não encontrado!"})
+    }
+
+    // Adiciona a requisição o ID (índice do array) do projeto
+    req.project_id = project_id;
+
+    // Adiciona a requisição o projeto em si
+    req.project = projects[project_id];
+
+    return next();
+
 }
 
-server.use(logRequests);
+// C | Cria um projeto
+app.post('/projects', logs, (req, res) => {
 
-/**
- * Retorna todos os projetos
- */
-server.get('/projects', (req, res) => {
-  return res.json(projects);
+    const {id, title} = req.body;
+
+    let project_id = projects.find(data => data.id == id);
+    
+    if(project_id){
+        return res.status(400).json({error: `Projeto com ID ${id} já existe!`});
+    }
+
+    projects.push({
+        "id": id,
+        "title": title,
+        "tasks": []
+    })
+
+    return res.json({result: "Projeto criado com sucesso!"});
+
 });
 
-/**
- * Request body: id, title
- * Cadastra um novo projeto
- */
-server.post('/projects', (req, res) => {
-  const { id, title } = req.body;
+// R | Ler um projeto
+app.get('/projects/:id', logs, get_project, (req, res) => {
 
-  const project = {
-    id,
-    title,
-    tasks: []
-  };
+    return res.json(req.project);
 
-  projects.push(project);
-
-  return res.json(project);
 });
 
-/**
- * Route params: id
- * Request body: title
- * Altera o título do projeto com o id presente nos parâmetros da rota.
- */
-server.put('/projects/:id', checkProjectExists, (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
+// U | Atualiza um projeto
+app.put('/projects/:id', logs, get_project, (req, res) => {
 
-  const project = projects.find(p => p.id == id);
+    let {title} = req.body;
+    let project_id = req.project_id;
 
-  project.title = title;
+    projects[project_id] = {...projects[project_id], title};
 
-  return res.json(project);
+    return res.json({result: "Projeto atualizado com sucesso!"});
+
 });
 
-/**
- * Route params: id
- * Deleta o projeto associado ao id presente nos parâmetros da rota.
- */
-server.delete('/projects/:id', checkProjectExists, (req, res) => {
-  const { id } = req.params;
+// D | Deleta um projeto
+app.delete('/projects/:id', logs, get_project, (req, res) => {
 
-  const projectIndex = projects.findIndex(p => p.id == id);
+    projects.splice(req.project_id, 1);
+    return res.json({result: "Projeto excluido com sucesso!"});
 
-  projects.splice(projectIndex, 1);
-
-  return res.send();
 });
 
-/**
- * Route params: id;
- * Adiciona uma nova tarefa no projeto escolhido via id; 
- */
-server.post('/projects/:id/tasks', checkProjectExists, (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
+// Adiciona tasks em um projeto
+app.post('/projects/:id/tasks', logs, get_project, (req, res) => {
 
-  const project = projects.find(p => p.id == id);
+    let { title } = req.body;
+    let project_id = req.project_id;
 
-  project.tasks.push(title);
+    projects[project_id].tasks.push(title);
 
-  return res.json(project);
+    return res.json({result: "Task criada com sucesso!"});
+
 });
 
-server.listen(4000);
+// Exibe todos os projetos
+app.get('/projects', logs, (req, res) => {
+
+    return res.json(projects);
+
+});
+
+// Exibe todas as tasks de um projeto
+app.get('/projects/:id/tasks', logs, get_project, (req, res) => {
+
+    let tasks = projects[req.project_id].tasks;
+    return res.json(tasks);
+
+});
+
+// O projeto escuta na porta 3000 (http://localhost:3000)
+app.listen(3000);
