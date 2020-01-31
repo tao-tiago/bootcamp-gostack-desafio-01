@@ -15,13 +15,13 @@ const projects = [
 
 ];
 
-// Middleware Global para criar logs de requisição
-const logs = (req, res, next) =>{
+// Middleware Global para criar log de requisição
+app.use((req, res, next) =>{
 
     console.count();
     return next();
 
-}
+});
 
 // Middleware para verificar se existe um projeto
 const get_project = (req, res, next) => {
@@ -30,31 +30,31 @@ const get_project = (req, res, next) => {
     let { id } = req.params;
 
     // Busca o índice do projeto no array
-    let project_id = projects.findIndex(data => data.id == id);
+    let project = projects.findIndex(data => data.id == id);
 
     // Se o projeto não existir, retorna um erro.
-    if(project_id == -1){
+    if(project == -1){
         return res.status(400).json({error: "Projeto não encontrado!"})
     }
 
     // Adiciona a requisição o ID (índice do array) do projeto
-    req.project_id = project_id;
+    req.project_index = project;
 
     // Adiciona a requisição o projeto em si
-    req.project = projects[project_id];
+    req.project = projects[project];
 
     return next();
 
 }
 
 // C | Cria um projeto
-app.post('/projects', logs, (req, res) => {
+app.post('/projects', (req, res) => {
 
     const {id, title} = req.body;
 
-    let project_id = projects.find(data => data.id == id);
+    let project = projects.find(data => data.id == id);
     
-    if(project_id){
+    if(project){
         return res.status(400).json({error: `Projeto com ID ${id} já existe!`});
     }
 
@@ -69,55 +69,54 @@ app.post('/projects', logs, (req, res) => {
 });
 
 // R | Ler um projeto
-app.get('/projects/:id', logs, get_project, (req, res) => {
+app.get('/projects/:id', get_project, (req, res) => {
 
     return res.json(req.project);
 
 });
 
 // U | Atualiza um projeto
-app.put('/projects/:id', logs, get_project, (req, res) => {
+app.put('/projects/:id', get_project, (req, res) => {
 
     let {title} = req.body;
-    let project_id = req.project_id;
+    let project = req.project;
 
-    projects[project_id] = {...projects[project_id], title};
+    project.title = title;
 
     return res.json({result: "Projeto atualizado com sucesso!"});
 
 });
 
 // D | Deleta um projeto
-app.delete('/projects/:id', logs, get_project, (req, res) => {
+app.delete('/projects/:id', get_project, (req, res) => {
 
-    projects.splice(req.project_id, 1);
+    projects.splice(req.project_index, 1);
     return res.json({result: "Projeto excluido com sucesso!"});
 
 });
 
 // Adiciona tasks em um projeto
-app.post('/projects/:id/tasks', logs, get_project, (req, res) => {
+app.post('/projects/:id/tasks', get_project, (req, res) => {
 
     let { title } = req.body;
-    let project_id = req.project_id;
 
-    projects[project_id].tasks.push(title);
+    req.project.tasks.push(title);
 
     return res.json({result: "Task criada com sucesso!"});
 
 });
 
 // Exibe todos os projetos
-app.get('/projects', logs, (req, res) => {
+app.get('/projects', (req, res) => {
 
     return res.json(projects);
 
 });
 
 // Exibe todas as tasks de um projeto
-app.get('/projects/:id/tasks', logs, get_project, (req, res) => {
+app.get('/projects/:id/tasks', get_project, (req, res) => {
 
-    let tasks = projects[req.project_id].tasks;
+    let tasks = req.project.tasks;
     return res.json(tasks);
 
 });
